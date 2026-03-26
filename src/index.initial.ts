@@ -1,13 +1,11 @@
-import {} from "node:http"
-import express from 'express'
-import debug from 'debug'
+import express from 'express';
+import debug from 'debug';
 
-
-const express = require('express');
+const log = debug('11-express:index');
 const port = process.env.PORT || 3000;
+
 const app = express();
-log('Express app created')
-const port = 3000;
+log('Express app created');
 
 app.get('/', (_req, res) => {
   res.send('Hello World!');
@@ -15,16 +13,13 @@ app.get('/', (_req, res) => {
 
 app.post('/', (_req, res) => {
   res.statusCode = 201;
-  res.send('Hello Post');
+  res.send('Hello Post!');
 });
 
 app.get('/api', (_req, res) => {
-  res.send('API rest!');
+  res.send('API rest');
 });
 
-const server = createServer(app)
-
-
-server.listen(port, () => {
+app.listen(port, () => {
   log(`Example app listening on port ${port}`);
 });

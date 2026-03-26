@@ -1,14 +1,49 @@
-import express from 'express';
+import { createServer, type ServerResponse } from 'node:http';
 import debug from 'debug';
-import morgan from 'morgan';
-import { customLogger } from './middleware/custom-logger.ts';
+import { app } from './app.ts';
+import type { HttpError } from './errors/http-error.ts';
+import { env } from './env.ts';
 
-const express = require('express');
-const port = process.env.PORT || 3000;
-const app = express();
-log('Express app created');
-const port = 3000;
+const log = debug('11-express:index');
+const port = env.PORT || 3000;
 
-app.listen(port, () => {
-  log(`Example app listening on port ${port}`);
-});
+const server = createServer(app);
+log('Server created');
+
+const listenManager = () => {
+  const addr = server.address();
+  if (addr === null) return;
+  let bind;
+  if (typeof addr === 'string') {
+    bind = 'pipe ' + addr;
+  } else {
+    bind =
+      addr.address === '::'
+        ? `http://localhost:${addr?.port}`
+        : `${addr.address}:${addr?.port}`;
+  }
+  if (env.NODE_ENV !== 'dev') {
+    console.log(`Server listening on ${bind}`);
+  } else {
+    log(`Servidor escuchando en ${bind}`);
+  }
+};
+
+const errorManager = (error: HttpError, response: ServerResponse) => {
+  if (!('statusCode' in error)) {
+    error = {
+      ...new Error('Internal Server Error'),
+      status: 500,
+      statusMessage: 'Internal Server Error',
+    };
+  }
+  const errorInfo = `Error ${error.status}: ${error.statusMessage}`;
+  response.statusCode = error.status;
+  response.statusMessage = error.statusMessage;
+  log(errorInfo, error.message);
+  response.end(errorInfo);
+};
+
+server.on('listening', listenManager);
+server.on('error', errorManager);
+server.listen(port);
